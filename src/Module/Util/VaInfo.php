@@ -26,6 +26,7 @@ declare(strict_types=0);
 namespace Ampache\Module\Util;
 
 use Ampache\Module\System\Plugin\PluginTypeEnum;
+use Ampache\Plugin\PluginGetMetadataInterface;
 use Ampache\Repository\Model\Plugin;
 use Ampache\Config\ConfigContainerInterface;
 use Ampache\Config\ConfigurationKeyEnum;
@@ -784,10 +785,10 @@ final class VaInfo implements VaInfoInterface
     /**
      * parse_mbid_array
      * Return only valid mbid data
-     * @param string[]|string $mbid
+     * @param string[]|string|null $mbid
      * @return string[]
      */
-    public static function parse_mbid_array(array|string $mbid): array
+    public static function parse_mbid_array(array|string|null $mbid): array
     {
         if (empty($mbid)) {
             return [];
@@ -950,7 +951,7 @@ final class VaInfo implements VaInfoInterface
                 $plugin            = new Plugin($tag_source);
                 $installed_version = Plugin::get_plugin_version($plugin->_plugin->name);
                 if ($installed_version > 0) {
-                    if ($plugin->_plugin !== null && $plugin->load($user)) {
+                    if ($plugin->_plugin instanceof PluginGetMetadataInterface && $plugin->load($user)) {
                         $this->tags[$tag_source] = $plugin->_plugin->get_metadata(
                             $this->gatherTypes,
                             self::clean_tag_info(
@@ -1941,7 +1942,7 @@ final class VaInfo implements VaInfoInterface
      *
      * This fills all tag types with Unknown (Broken)
      *
-     * @return array Return broken title, album, artist
+     * @return array<string, array<string, string>> Return broken title, album, artist
      */
     public function set_broken(): array
     {

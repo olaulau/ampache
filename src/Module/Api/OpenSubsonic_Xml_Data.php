@@ -56,6 +56,7 @@ use Ampache\Repository\Model\Video;
 use Ampache\Repository\SongRepositoryInterface;
 use DateTime;
 use DateTimeZone;
+use Exception;
 use SimpleXMLElement;
 
 /**
@@ -202,7 +203,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addIndexes
-     * @param list<array{
+     * @param array<int, array{
      *     id: int,
      *     f_name: string,
      *     name: string,
@@ -211,7 +212,7 @@ class OpenSubsonic_Xml_Data
      *     has_art: int
      * }> $artists
      */
-    public static function addIndexes(SimpleXMLElement $xml, array $artists, int $lastModified = 0): SimpleXMLElement
+    public static function addIndexes(SimpleXMLElement $xml, array $artists, ?int $lastModified = 0): SimpleXMLElement
     {
         $xindexes = self::_addChildToResultXml($xml, 'indexes');
         $xindexes->addAttribute('lastModified', number_format($lastModified * 1000, 0, '.', ''));
@@ -235,7 +236,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addIndex
-     * @param list<array{
+     * @param array<int, array{
      *     id: int,
      *     f_name: string,
      *     name: string,
@@ -301,7 +302,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addArtists
-     * @param list<array{
+     * @param array<int, array{
      *     id: int,
      *     f_name: string,
      *     name: string,
@@ -745,7 +746,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addGenres
-     * @param list<array{id: int, name: string, is_hidden: int, count: int}> $tags
+     * @param array<int, array{id: int, name: string, is_hidden: int, count: int}> $tags
      */
     public static function addGenres(SimpleXMLElement $xml, array $tags): SimpleXMLElement
     {
@@ -1014,7 +1015,13 @@ class OpenSubsonic_Xml_Data
         if (!empty($items)) {
             $current   = $playQueue->get_current_object();
             $play_time = date("Y-m-d H:i:s", $playQueue->get_time());
-            $date      = new DateTime($play_time);
+            try {
+                $date = new DateTime($play_time);
+            } catch (Exception $error) {
+                debug_event(self::class, 'DateTime error: ' . $error->getMessage(), 5);
+
+                return $xml;
+            }
             $date->setTimezone(new DateTimeZone('UTC'));
             $changedBy  = $playQueue->client ?? '';
             $xplayqueue = self::_addChildToResultXml($xml, 'playQueueByIndex');
@@ -1076,7 +1083,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addNowPlaying
-     * @param list<array{
+     * @param array<int, array{
      *     media: library_item,
      *     client: User,
      *     agent: string,
@@ -1265,7 +1272,7 @@ class OpenSubsonic_Xml_Data
         $xuser->addAttribute('commentRole', (AmpConfig::get('social')) ? 'true' : 'false');
         $xuser->addAttribute('podcastRole', (AmpConfig::get('podcast')) ? 'true' : 'false');
         $xuser->addAttribute('streamRole', 'true');
-        $xuser->addAttribute('jukeboxRole', (AmpConfig::get('allow_localplay_playback') && AmpConfig::get('localplay_controller') && Access::check(AccessTypeEnum::LOCALPLAY, AccessLevelEnum::GUEST)) ? 'true' : 'false');
+        $xuser->addAttribute('jukeboxRole', (AmpConfig::get('allow_localplay_playback') && AmpConfig::get('localplay_controller') && Access::check(AccessTypeEnum::LOCALPLAY, AccessLevelEnum::GUEST, $user->getId())) ? 'true' : 'false');
         $xuser->addAttribute('shareRole', Preference::get_by_user($user->id, 'share') ? 'true' : 'false');
         $xuser->addAttribute('videoConversionRole', 'false');
 
@@ -1518,7 +1525,7 @@ class OpenSubsonic_Xml_Data
      *     mediumphoto: ?string,
      *     megaphoto: ?string
      * } $info
-     * @param list<array{
+     * @param array<int, array{
      *     id: ?int,
      *     name: string,
      *     rel?: ?string,
@@ -1559,7 +1566,7 @@ class OpenSubsonic_Xml_Data
           *     mediumphoto: ?string,
           *     megaphoto: ?string
           * } $info
-     * @param list<array{
+     * @param array<int, array{
           *     id: ?int,
           *     name: string,
           *     rel?: ?string,
@@ -1573,7 +1580,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addSimilarSongs
-     * @param list<array{
+     * @param array<int, array{
      *     id: ?int,
      *     name?: ?string,
      *     rel?: ?string,
@@ -1598,7 +1605,7 @@ class OpenSubsonic_Xml_Data
 
     /**
      * addSimilarSongs2
-     * @param list<array{
+     * @param array<int, array{
      *     id: ?int,
      *     name?: ?string,
      *     rel?: ?string,

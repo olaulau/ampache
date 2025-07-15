@@ -677,7 +677,7 @@ final class Play2Action implements ApplicationActionInterface
                         $catalog->cache_catalog_file($file_target, $media_file);
                     }
                 }
-                if ($catalog instanceof Catalog_local && $file_target) {
+                if ($catalog instanceof Catalog_local && $file_target && $cache_target) {
                     $catalog->cache_catalog_file($file_target, $media, $cache_target);
                 }
             }
@@ -695,7 +695,7 @@ final class Play2Action implements ApplicationActionInterface
                 $transcode_cfg != 'never' &&
                 $transcode_to &&
                 ($bitrate === 0 || $bitrate = (int)AmpConfig::get('transcode_bitrate', 128) * 1000) &&
-                ($file_target !== null && is_file($file_target))
+                $has_cache
             ) {
                 $this->logger->debug(
                     'Found pre-cached file {' . $file_target . '}',
